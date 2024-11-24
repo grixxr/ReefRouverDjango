@@ -4,6 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+django = "*"
+channels = "*"
+channels-redis = "*"
+opencv-python-headless = "*"
+ultralytics = "*"
+django-cors-headers = "*"
+daphne = "*"
+aiohttp = "*"
 
 [dev-packages]
 

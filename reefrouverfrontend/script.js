@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     const videoElement = document.querySelector('img[alt="Live Feed"]');
-    const ws = new WebSocket('ws://127.0.0.1:8000/ws/video_feed/');
+    const ws = new WebSocket('ws://10.0.254.10:8000/ws/video_feed/');
 
     ws.onopen = function () {
         console.log("WebSocket connection opened.");
