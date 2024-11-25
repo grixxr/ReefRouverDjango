@@ -6,6 +6,7 @@ import base64
 import os
 import csv  # For saving CSV files
 import time  # For generating unique filenames
+import zipfile  # For creating zip files
 
 model_path = os.path.join(os.path.dirname(__file__), 'models', 'ReefRouver.pt')
 
@@ -50,14 +51,11 @@ class VideoFeedConsumer(AsyncWebsocketConsumer):
         self.recording = True
         self.csv_data = [["Object", "Confidence", "Coordinates"]]  # Initialize with header
         # Generate a unique filename using the current timestamp
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        self.timestamp = time.strftime("%Y%m%d_%H%M%S")
         
-        # Define the folder path for recordings and ensure it exists
-        self.csv_path = os.path.join(recordings_dir, f"inference_results_{timestamp}.csv")
-        self.video_path = os.path.join(recordings_dir, f"recorded_inference_{timestamp}.mp4")
-
-        # Create a new CSV file with the unique filename
-        print(f"New CSV file created: {self.csv_path}")
+        # Define file paths
+        self.csv_path = os.path.join(recordings_dir, f"csv_inference_{self.timestamp}.csv")
+        self.video_path = os.path.join(recordings_dir, f"video_inference_{self.timestamp}.mp4")
 
         # Initialize video writer
         self.video_writer = cv2.VideoWriter(
@@ -66,7 +64,7 @@ class VideoFeedConsumer(AsyncWebsocketConsumer):
 
     def stop_recording(self):
         # Finalize video and CSV file
-        print("Stopping recording and saving CSV file...")  # Debugging line
+        print("Stopping recording...")  # Debugging line
         self.recording = False
         if self.video_writer:
             self.video_writer.release()
@@ -80,10 +78,25 @@ class VideoFeedConsumer(AsyncWebsocketConsumer):
                     # Write the header and then the data
                     writer.writerows(self.csv_data)
                 print(f"Data saved to {self.csv_path}")  # Debugging line
+
+                # Create zip for CSV
+                csv_zip_path = os.path.join(recordings_dir, f"csv_inference_{self.timestamp}.zip")
+                with zipfile.ZipFile(csv_zip_path, 'w') as zipf:
+                    zipf.write(self.csv_path, os.path.basename(self.csv_path))
+                os.remove(self.csv_path)  # Remove CSV file after zipping
+                print(f"CSV zipped to {csv_zip_path}")
             else:
                 print("No detection results to save.")
+
+            # Create zip for video
+            video_zip_path = os.path.join(recordings_dir, f"video_inference_{self.timestamp}.zip")
+            with zipfile.ZipFile(video_zip_path, 'w') as zipf:
+                zipf.write(self.video_path, os.path.basename(self.video_path))
+            os.remove(self.video_path)  # Remove video file after zipping
+            print(f"Video zipped to {video_zip_path}")
+
         except Exception as e:
-            print(f"Error saving CSV file: {e}")
+            print(f"Error during zipping process: {e}")
 
     async def stream_video(self):
         cap = cv2.VideoCapture(0)
